@@ -92,6 +92,7 @@ void IRAM_ATTR AiEsp32RotaryEncoder::readButton_ISR()
 	{
 		this->previous_butt_state = true;
 		//Serial.println("Button Pushed");
+		lastTimePressed = millis();
 		buttonState = BUT_PUSHED;
 	}
 	else if (!butt_state && this->previous_butt_state)
@@ -99,6 +100,15 @@ void IRAM_ATTR AiEsp32RotaryEncoder::readButton_ISR()
 		this->previous_butt_state = false;
 		//Serial.println("Button Released");
 		buttonState = BUT_RELEASED;
+		unsigned long pressDuration = millis() - lastTimePressed;
+		if ( (buttonLongPress != 0) && (pressDuration > buttonLongPress))
+		{
+			buttonEvent = BUTTOM_EVENT_LONG_PRESSED;
+		}
+		else if (pressDuration > buttonDebounce)
+		{
+			buttonEvent = BUTTOM_EVENT_PRESSED;
+		}
 	}
 	else
 	{
@@ -135,6 +145,14 @@ long AiEsp32RotaryEncoder::readEncoder()
 	return (this->encoder0Pos / this->encoderSteps);
 }
 
+ButtonEvent AiEsp32RotaryEncoder::getLastButtonEvent(){
+	return buttonEvent;
+}
+
+void AiEsp32RotaryEncoder::clearLastButtonEvent(){
+	buttonEvent = BUTTOM_EVENT_NONE;
+}
+
 void AiEsp32RotaryEncoder::setEncoderValue(long newValue)
 {
 	reset(newValue);
@@ -154,7 +172,7 @@ void AiEsp32RotaryEncoder::setup(void (*ISR_callback)(void), void (*ISR_button)(
 {
 	attachInterrupt(digitalPinToInterrupt(this->encoderAPin), ISR_callback, CHANGE);
 	attachInterrupt(digitalPinToInterrupt(this->encoderBPin), ISR_callback, CHANGE);
-	attachInterrupt(digitalPinToInterrupt(this->encoderButtonPin), ISR_button, RISING);
+	attachInterrupt(digitalPinToInterrupt(this->encoderButtonPin), ISR_button, CHANGE);
 }
 
 void AiEsp32RotaryEncoder::begin()

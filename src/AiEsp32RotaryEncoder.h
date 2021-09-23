@@ -26,6 +26,13 @@ typedef enum
 	BUT_DISABLED = 99,
 } ButtonState;
 
+typedef enum
+{
+	BUTTOM_EVENT_NONE = 0,
+	BUTTOM_EVENT_PRESSED = 1,
+	BUTTOM_EVENT_LONG_PRESSED = 2,
+} ButtonEvent;
+
 class AiEsp32RotaryEncoder
 {
 
@@ -37,6 +44,9 @@ private:
 	volatile int8_t lastMovementDirection = 0; //1 right; -1 left
 	volatile unsigned long lastMovementAt = 0;
 	unsigned long rotaryAccelerationCoef = 150;
+
+	unsigned long buttonDebounce = 50; //ms
+	unsigned long buttonLongPress = 1500; //ms
 
 	bool _circleValues = false;
 	bool isEnabled = true;
@@ -54,7 +64,11 @@ private:
 	long lastReadEncoder0Pos;
 	bool previous_butt_state;
 
+	unsigned long lastTimePressed = 0;
+
 	ButtonState buttonState;
+
+	ButtonEvent buttonEvent;
 
 	int8_t enc_states[16] = {0, -1, 1, 0, 1, 0, 0, -1, -1, 0, 0, 1, 0, 1, -1, 0};
 	void (*ISR_callback)();
@@ -80,6 +94,8 @@ public:
 	long readEncoder();
 	void setEncoderValue(long newValue);
 	long encoderChanged();
+	ButtonEvent getLastButtonEvent();
+	void clearLastButtonEvent();
 	ButtonState currentButtonState();
 	unsigned long getAcceleration() { return this->rotaryAccelerationCoef; }
 	void setAcceleration(unsigned long acceleration) { this->rotaryAccelerationCoef = acceleration; }
